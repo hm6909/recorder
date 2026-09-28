@@ -21,15 +21,18 @@ export default function ScoreViewer({image,notes,zoom,showNotes}:Props) {
     ctx.scale(ratio,ratio);ctx.clearRect(0,0,width,height);
     if(!showNotes)return;
     const scaleX=width/image.width,scaleY=height/image.height;
-    ctx.font=`bold ${20*zoom}px "Noto Sans KR", Arial, sans-serif`;
-    ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineJoin='round';ctx.lineWidth=4*zoom;
+    const fontSize=Math.max(11,Math.min(18,16*width/Math.max(image.width,760)));
+    ctx.font=`bold ${fontSize}px "Noto Sans KR", Arial, sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineJoin='round';ctx.lineWidth=Math.max(2,fontSize*.2);
     notes.forEach(note=>{
       const text=pitchToSolfege(note.pitch);
       const x=Math.max(22*zoom,Math.min(width-22*zoom,note.x*scaleX));
-      const y=Math.max(24*zoom,note.y*scaleY-12*zoom);
+      const y=Math.max(24*zoom,note.y*scaleY-fontSize*.8);
       ctx.strokeStyle='#ffffff';ctx.strokeText(text,x,y);ctx.fillStyle='#245bc1';ctx.fillText(text,x,y);
     });
   },[width,height,image,notes,showNotes,zoom]);
-  return <div className="score-scroll" ref={container}><div className="score-paper" style={{width,height}}><img src={image.url} alt={`업로드한 악보: ${image.name}`} style={{width,height}}/><canvas ref={canvas} style={{width,height}} aria-label={showNotes ? `테스트 계이름: ${notes.map(n=>pitchToSolfege(n.pitch)).join(', ')}`:'계이름 숨김'}/></div></div>;
+  return <div className="score-scroll" ref={container}><div className="score-paper" style={{width,height}}><img src={image.url} alt={`업로드한 악보: ${image.name}`} style={{width,height}}/><canvas ref={canvas} style={{width,height}} aria-label={showNotes ? `인식된 계이름: ${notes.map(n=>pitchToSolfege(n.pitch)).join(', ')}`:'계이름 숨김'}/></div></div>;
 }
+
+
 

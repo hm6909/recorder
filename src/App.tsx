@@ -45,7 +45,7 @@ export default function App() {
     try {
       const result = await analyzeScore(image, 'satb');
       if (request !== generation.current) return;
-      setAnalysis(result); setShowNotes(true); if (!result.partAssignmentReliable) setPart('all');
+      setAnalysis(result); setShowNotes(true); setPart('soprano1');
     } catch (reason) {
       if (request === generation.current) {
         setError(reason instanceof Error ? reason.message : '악보 분석에 실패했어요. 사진을 확인하고 다시 시도해 주세요.');
@@ -61,11 +61,12 @@ export default function App() {
       {!image ? <div className={`empty-score ${dragging ? 'dragging' : ''}`} onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files[0]) void upload(e.dataTransfer.files[0]); }}><div className="illustration"><div className="paper-art"><span>♫</span><i/><i/><i/><i/><i/><strong>♩ ♪ ♩</strong></div><span className="upload-bubble"><ImagePlus size={27}/></span><span className="sparkle">✦</span></div><h3>악보 사진을 올려주세요.</h3><p>사진을 선택하거나 이곳에 끌어다 놓아요.</p><ImageUploader onFile={upload}/><small>최대 20MB · 악보 전체가 선명하게 나오면 좋아요</small></div>
       : <><div className="file-row"><span><FileImage size={18}/>{image.name}</span><ImageUploader compact onFile={upload}/></div><ResultToolbar zoom={zoom} onZoom={setZoom} showNotes={showNotes} onShow={setShowNotes} analyzed={!!analysis}/><ScoreViewer image={image} notes={notes} zoom={zoom} showNotes={showNotes}/></>}
       {error && <p className="error" role="alert">{error}</p>}
-      <ControlPanel part={part} onPart={setPart} onAnalyze={analyze} disabled={!image} busy={busy} partSelectionEnabled={analysis?.partAssignmentReliable !== false}/>
+      <ControlPanel part={part} onPart={setPart} onAnalyze={analyze} disabled={!image} busy={busy} />
     </section>
     <div className="demo-notice" role="status"><Info size={21}/><div><strong>{analysis ? `사진에서 오선 ${analysis.staffCount}개, 음표 ${analysis.notes.length}개를 찾았어요.` : '사진은 내 기기에서 분석돼요.'}</strong><p>{analysis ? analysis.warnings.join(' ') : '현재는 실험적인 오선·검은 음표 인식이에요. 모든 음표와 조표를 정확히 읽는 기능은 아니므로 결과를 악보와 비교해 확인해 주세요.'}</p></div><span className="demo-badge">실험 중</span></div>
     <section className="tips"><div className="tip-heading">사진은 이렇게 찍어주세요</div><span><Check size={17}/> 악보를 반듯하게</span><span><Check size={17}/> 밝은 곳에서 선명하게</span><span><Check size={17}/> 오선이 모두 보이게</span></section>
     <footer><Music2 size={16}/> 작은 연습이 모여, 멋진 연주가 돼요.</footer></main></>;
 }
+
 
 
