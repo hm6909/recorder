@@ -76,13 +76,12 @@ export function recognize(rgba:Uint8ClampedArray,width:number,height:number,layo
   const binary=binarize(rgba,width,height),staves=findStaves(binary,width,height);
   if(!staves.length)throw new Error('오선을 찾지 못했어요. 악보를 반듯하게, 더 가까이 찍어 주세요.');
   const parts:Part[]=layout==='satb'?['soprano1','alto','tenor','bass']:layout==='ssa'?['soprano1','soprano2','alto']:['soprano1'];
-  if(staves.length%parts.length!==0)throw new Error(`오선 ${staves.length}개를 찾았지만 선택한 ${parts.length}성부 구성과 맞지 않아요. 악보 구성을 바꾸거나 한 단 전체가 보이게 찍어 주세요.`);
+  const partAssignmentReliable=staves.length%parts.length===0;
   const notes:Note[]=[];
   const pixel=(x:number,y:number)=>x>=0&&x<width&&y>=0&&y<height?binary[Math.round(y)*width+Math.round(x)]||0:0;
   staves.forEach((staff,staffIndex)=>{
     const gap=staff.gap,part=parts[staffIndex%parts.length];
     const candidates:{x:number;y:number;score:number;step:number}[]=[];
-    // Search only around discrete staff/ledger positions; reject shapes without a stem.
     for(let step=-4;step<=14;step++)for(let x=Math.ceil(staff.left+gap*5);x<staff.right-gap;x++) {
       const expected=staff.top+4*gap-step*gap/2+staff.slope*(x-staff.centerX);
       let best:{x:number;y:number;score:number;step:number}|undefined;
@@ -93,7 +92,6 @@ export function recognize(rgba:Uint8ClampedArray,width:number,height:number,layo
         for(let dy=-Math.ceil(gap*.8);dy<=Math.ceil(gap*.8);dy++)for(let dx=-Math.ceil(gap*.85);dx<=Math.ceil(gap*.85);dx++) {
           const rotatedY=dy+dx*.3;
           const distance=(dx/rx)**2+(rotatedY/ry)**2;
-          // Staff/ledger lines would otherwise make empty positions look like heads.
           const localY=y+dy-staff.slope*(x+dx-staff.centerX);
           const lineIndex=Math.round((localY-staff.top)/gap);
           if(Math.abs(localY-staff.top-lineIndex*gap)<1.25)continue;
@@ -121,7 +119,12 @@ export function recognize(rgba:Uint8ClampedArray,width:number,height:number,layo
     accepted.sort((a,b)=>a.x-b.x);
     for(const head of accepted)notes.push({id:notes.length+1,x:head.x,y:head.y,pitch:pitchForStep(head.step,part==='bass'),part,staff:staffIndex+1,confidence:Math.min(.9,Math.max(.3,head.score*.8))});
   });
-  if(!notes.length)throw new Error('オ선은 찾았지만 음표를 찾지 못했어요. 더 선명한 사진으로 다시 시도해 주세요.');
-  return {notes,staffCount:staves.length,warnings:['검은 음표 머리 중심의 실험용 인식입니다. 흰 음표·쉼표·장식음은 누락되거나 잘못 표시될 수 있어요.','조표·샵·플랫·제자리표는 자동 인식하지 않아요. 표시된 계이름을 악보와 비교해 확인해 주세요.','파트와 음자리표는 선택한 악보 구성에 따라 배정합니다. 자동으로 읽은 결과가 아니에요.']};
+  if(!notes.length)throw new Error('오선은 찾았지만 음표를 찾지 못했어요. 더 선명한 사진으로 다시 시도해 주세요.');
+  const warnings=[
+    '검은 음표 머리 중심의 실험용 인식입니다. 흰 음표·쉼표·장식음은 누락되거나 잘못 표시될 수 있어요.',
+    '조표·샵·플랫·제자리표는 자동 인식하지 않아요. 표시된 계이름을 악보와 비교해 확인해 주세요.',
+    '파트와 음자리표는 선택한 악보 구성에 따라 배정합니다. 자동으로 읽은 결과가 아니에요.',
+  ];
+  if(!partAssignmentReliable)warnings.unshift(`오선 ${staves.length}개를 찾았어요. 일부 오선을 놓쳤을 수 있어 파트 구분이 불확실합니다. 전체 악보 보기로 확인해 주세요.`);
+  return {notes,staffCount:staves.length,partAssignmentReliable,warnings};
 }
-
